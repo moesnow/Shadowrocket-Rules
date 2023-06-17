@@ -1,0 +1,15 @@
+name: Generate routing rules for Shadowrocket
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clone source code
+      working-directory: /workdir
+      run: |
+        git clone https://github.com/moesnow/Shadowrocket-Rules
+        cd Shadowrocket-Rules
+        ./build
+        cat rule.conf
