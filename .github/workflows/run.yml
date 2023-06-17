@@ -7,8 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Clone source code
-      working-directory: /workdir
       run: |
+        pwd
         git clone https://github.com/moesnow/Shadowrocket-Rules
         cd Shadowrocket-Rules
         ./build
