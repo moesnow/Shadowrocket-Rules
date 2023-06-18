@@ -18,6 +18,10 @@
   - [https://raw.githubusercontent.com/moesnow/Shadowrocket-Rules/release/rule.conf](https://raw.githubusercontent.com/moesnow/Shadowrocket-Rules/release/rule.conf)
   - [https://cdn.jsdelivr.net/gh/moesnow/Shadowrocket-Rules@release/rule.conf](https://cdn.jsdelivr.net/gh/moesnow/Shadowrocket-Rules@release/rule.conf)
 
+### 使用方式
+
+关于 Shadowrocket 的详细使用方法，见[官方使用教程](https://www.shadowrocket.vip/使用教程)。要想使用本项目的规则文件，只需要在”配置“选项内的“远程文件”中添加上述规则文件链接，然后点击链接选择“使用配置”。
+
 ## 致谢
 
 - [@Loyalsoldier/surge-rules](https://github.com/Loyalsoldier/surge-rules)
