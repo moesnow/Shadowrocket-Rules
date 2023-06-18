@@ -1,21 +1,34 @@
 name: Generate routing rules for Shadowrocket
 on:
   workflow_dispatch:
-
+  schedule:
+      - cron: "30 23 * * *"
+    push:
+      branches:
+        - master
+      paths-ignore:
+        - "**/README.md"
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
     - name: Clone source code
       run: |
         git clone https://github.com/moesnow/Shadowrocket-Rules
 
-    - name: Generate rule.conf file
+    - name: Make directory
       run: |
         mkdir publish
+
+    - name: Generate rule.conf file
+      run: |
         cd Shadowrocket-Rules
         ./build
-        mv rule.conf ../publish
+
+    - name: Move files to publish directory
+      run: |
+        mv Shadowrocket-Rules/rule.conf publish
 
     - name: Git push assets to "release" branch
       run: |
@@ -29,4 +42,7 @@ jobs:
         git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
         git push -f -u origin release
 
-
+    - name: Purge jsdelivr CDN
+      run: |
+        cd publish || exit 1
+        curl -i "https://purge.jsdelivr.net/gh/${{ github.repository }}@release/rule.conf"
