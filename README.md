@@ -15,8 +15,8 @@
 #### 规则文件:
 
 - **GFWList代理 中国大陆域名和IP直连 其余代理**：
-  - [https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/direct.txt](https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/direct.txt)
-  - [https://cdn.jsdelivr.net/gh/Loyalsoldier/surge-rules@release/direct.txt](https://cdn.jsdelivr.net/gh/Loyalsoldier/surge-rules@release/direct.txt)
+  - [https://raw.githubusercontent.com/moesnow/Shadowrocket-Rules/release/rule.conf](https://raw.githubusercontent.com/moesnow/Shadowrocket-Rules/release/rule.conf)
+  - [https://cdn.jsdelivr.net/gh/moesnow/Shadowrocket-Rules@release/rule.conf](https://cdn.jsdelivr.net/gh/moesnow/Shadowrocket-Rules@release/rule.conf)
 
 ## 致谢
 
