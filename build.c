@@ -71,20 +71,6 @@ char* getData(const char* url) {
     if (res != CURLE_OK) {
         fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
         return NULL;
-    } else {
-        /*
-         * Now, our chunk.memory points to a memory block that is chunk.size
-         * bytes big and contains the remote file.
-         *
-         * Do something nice with it!
-         */
-
-        // 按行输出获取到的网页内容
-        // char* line = strtok(chunk.memory, "\n");
-        // while (line != NULL) {
-        //     printf("%s\n", line);
-        //     line = strtok(NULL, "\n");
-        // }
     }
 
     char* line = strtok(chunk.memory, "\n");
@@ -92,10 +78,9 @@ char* getData(const char* url) {
     /* cleanup curl stuff */
     curl_easy_cleanup(curl_handle);
 
-    // free(chunk.memory);
-
     /* we are done with libcurl, so clean it up */
     curl_global_cleanup();
+
     return line;
 }
 
