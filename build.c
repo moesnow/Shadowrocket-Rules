@@ -8,13 +8,96 @@
 
 #define DEFAULT_CONF "default.dat"
 #define OUTPUT_CONF "rule.conf"
-#define GFW_CONF "gfw.txt"
-#define DIRECT_CONF "direct.txt"
-#define CNCIDR_CONF "cncidr.txt"
 
 #define GFW_URL "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/gfw.txt"
 #define DIRECT_URL "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/direct.txt"
 #define CNCIDR_URL "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/cncidr.txt"
+
+struct MemoryStruct {
+    char* memory;
+    size_t size;
+};
+
+static size_t WriteMemoryCallback(void* contents, size_t size, size_t nmemb, void* userp) {
+    size_t realsize = size * nmemb;
+    struct MemoryStruct* mem = (struct MemoryStruct*)userp;
+
+    char* ptr = realloc(mem->memory, mem->size + realsize + 1);
+    if (!ptr) {
+        /* out of memory! */
+        printf("not enough memory (realloc returned NULL)\n");
+        return 0;
+    }
+
+    mem->memory = ptr;
+    memcpy(&(mem->memory[mem->size]), contents, realsize);
+    mem->size += realsize;
+    mem->memory[mem->size] = 0;
+
+    return realsize;
+}
+
+char* getData(const char* url) {
+    CURL* curl_handle;
+    CURLcode res;
+
+    struct MemoryStruct chunk;
+
+    chunk.memory = malloc(1); /* will be grown as needed by the realloc above */
+    chunk.size = 0;           /* no data at this point */
+
+    curl_global_init(CURL_GLOBAL_ALL);
+
+    /* init the curl session */
+    curl_handle = curl_easy_init();
+
+    /* specify URL to get */
+    curl_easy_setopt(curl_handle, CURLOPT_URL, "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/direct.txt");
+
+    /* send all data to this function  */
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
+
+    /* we pass our 'chunk' struct to the callback function */
+    curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void*)&chunk);
+
+    /* some servers do not like requests that are made without a user-agent
+       field, so we provide one */
+    curl_easy_setopt(curl_handle, CURLOPT_USERAGENT, "libcurl-agent/1.0");
+
+    /* get it! */
+    res = curl_easy_perform(curl_handle);
+
+    /* check for errors */
+    if (res != CURLE_OK) {
+        fprintf(stderr, "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+        return NULL;
+    } else {
+        /*
+         * Now, our chunk.memory points to a memory block that is chunk.size
+         * bytes big and contains the remote file.
+         *
+         * Do something nice with it!
+         */
+
+        // 按行输出获取到的网页内容
+        // char* line = strtok(chunk.memory, "\n");
+        // while (line != NULL) {
+        //     printf("%s\n", line);
+        //     line = strtok(NULL, "\n");
+        // }
+    }
+
+    char* line = strtok(chunk.memory, "\n");
+
+    /* cleanup curl stuff */
+    curl_easy_cleanup(curl_handle);
+
+    // free(chunk.memory);
+
+    /* we are done with libcurl, so clean it up */
+    curl_global_cleanup();
+    return line;
+}
 
 char* generateDateString() {
     time_t currentTime;
@@ -30,72 +113,8 @@ char* generateDateString() {
     return dateString;
 }
 
-// 回调函数，用于将下载的数据写入文件
-static size_t write_callback(void* ptr, size_t size, size_t nmemb, FILE* stream) {
-    return fwrite(ptr, size, nmemb, stream);
-}
-
-int downloadFile(const char* url, const char* outputFile) {
-    CURL* curl;
-    FILE* file;
-    CURLcode res;
-
-    curl_global_init(CURL_GLOBAL_DEFAULT);
-    curl = curl_easy_init();
-
-    if (curl) {
-        file = fopen(outputFile, "wb");
-        if (file) {
-            curl_easy_setopt(curl, CURLOPT_URL, url);
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-
-            res = curl_easy_perform(curl);
-            if (res != CURLE_OK) {
-                printf("Error downloading file: %s\n", curl_easy_strerror(res));
-                fclose(file);
-                curl_easy_cleanup(curl);
-                curl_global_cleanup();
-                return 1;
-            }
-
-            fclose(file);
-        } else {
-            printf("Error opening file for writing: %s\n", outputFile);
-            curl_easy_cleanup(curl);
-            curl_global_cleanup();
-            return 1;
-        }
-
-        curl_easy_cleanup(curl);
-    } else {
-        printf("Error initializing curl.\n");
-        curl_global_cleanup();
-        return 1;
-    }
-
-    curl_global_cleanup();
-    return 0;
-}
-
-void removeFile() {
-    remove(GFW_CONF);
-    remove(DIRECT_CONF);
-    remove(CNCIDR_CONF);
-}
-
 int main() {
-    int gfwResult = downloadFile(GFW_URL, GFW_CONF);
-    int directResult = downloadFile(DIRECT_URL, DIRECT_CONF);
-    int cncidrResult = downloadFile(CNCIDR_URL, CNCIDR_CONF);
-
-    if (gfwResult || directResult || cncidrResult) {
-        printf("Error downloading file.\n");
-        removeFile();
-        return 1;
-    }
-
-    FILE *defaultFile, *outputFile, *gfwFile, *directFile, *cncidrFile;
+    FILE *defaultFile, *outputFile;
     char line[MAX_LINE_LENGTH];
 
     defaultFile = fopen(DEFAULT_CONF, "r");
@@ -118,23 +137,17 @@ int main() {
     // 复制默认配置文件中的内容到输出文件，直到遇到 [Rule]
     while (fgets(line, MAX_LINE_LENGTH, defaultFile) != NULL) {
         if (strcmp(line, "[Rule]\n") == 0) {
+            fputs(line, outputFile);
             break;
         }
         fputs(line, outputFile);
     }
 
-    // 添加 [Rule] 标记
-    fputs("[Rule]\n", outputFile);
-
-    // 从 GFW_CONF 文件中读取内容并生成规则
-    gfwFile = fopen(GFW_CONF, "r");
-    if (gfwFile == NULL) {
-        printf("Error opening %s\n", GFW_CONF);
-        return 1;
-    }
-
     fputs("# GFW Proxy\n", outputFile);
-    while (fgets(line, MAX_LINE_LENGTH, gfwFile) != NULL) {
+    char* gfw_data = getData(GFW_URL);
+    while (gfw_data != NULL) {
+        // while (fgets(line, MAX_LINE_LENGTH, gfwFile) != NULL) {
+        strcpy(line, gfw_data);
         // 去除行尾的换行符
         line[strcspn(line, "\n")] = '\0';
 
@@ -151,18 +164,17 @@ int main() {
 
         // 在行后添加",Proxy"
         fputs(",Proxy\n", outputFile);
+
+        gfw_data = strtok(NULL, "\n");
     }
     fputs("\n", outputFile);
-    fclose(gfwFile);
+    free(gfw_data);
 
-    // 从 DIRECT_CONF 文件中读取内容并生成规则
-    directFile = fopen(DIRECT_CONF, "r");
-    if (directFile == NULL) {
-        printf("Error opening %s\n", DIRECT_CONF);
-        return 1;
-    }
     fputs("# Direct DIRECT\n", outputFile);
-    while (fgets(line, MAX_LINE_LENGTH, directFile) != NULL) {
+    char* direct_data = getData(DIRECT_URL);
+    while (direct_data != NULL) {
+        // while (fgets(line, MAX_LINE_LENGTH, directFile) != NULL) {
+        strcpy(line, direct_data);
         // 去除行尾的换行符
         line[strcspn(line, "\n")] = '\0';
 
@@ -179,18 +191,16 @@ int main() {
 
         // 在行后添加",DIRECT"
         fputs(",DIRECT\n", outputFile);
+        direct_data = strtok(NULL, "\n");
     }
     fputs("\n", outputFile);
-    fclose(directFile);
+    free(direct_data);
 
-    // 从 CNCIDR_CONF 文件中读取内容并生成规则
-    cncidrFile = fopen(CNCIDR_CONF, "r");
-    if (cncidrFile == NULL) {
-        printf("Error opening %s\n", CNCIDR_CONF);
-        return 1;
-    }
     fputs("# CNCIDR DIRECT\n", outputFile);
-    while (fgets(line, MAX_LINE_LENGTH, cncidrFile) != NULL) {
+    char* cncidr_data = getData(CNCIDR_URL);
+    while (cncidr_data != NULL) {
+        // while (fgets(line, MAX_LINE_LENGTH, cncidrFile) != NULL) {
+        strcpy(line, cncidr_data);
         // 去除行尾的换行符
         line[strcspn(line, "\n")] = '\0';
 
@@ -199,9 +209,10 @@ int main() {
 
         // 在行后添加",DIRECT"
         fputs(",DIRECT\n", outputFile);
+        cncidr_data = strtok(NULL, "\n");
     }
     fputs("\n", outputFile);
-    fclose(cncidrFile);
+    free(cncidr_data);
 
     fputs("FINAL,proxy\n\n", outputFile);
 
@@ -221,8 +232,6 @@ int main() {
     // 关闭文件
     fclose(defaultFile);
     fclose(outputFile);
-
-    removeFile();
 
     return 0;
 }
