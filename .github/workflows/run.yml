@@ -13,6 +13,11 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
+      - name: Set variables
+        run: |
+          echo "RELEASE_NAME=Released on $(date +%Y%m%d%H%M)" >> $GITHUB_ENV
+        shell: bash
+
       - name: Clone source code
         run: |
           git clone https://github.com/moesnow/Shadowrocket-Rules
@@ -38,7 +43,7 @@ jobs:
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b release
           git add .
-          git commit -m "first commit"
+          git commit -m "${{ env.RELEASE_NAME }}"
           git remote add origin "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           git push -f -u origin release
 
