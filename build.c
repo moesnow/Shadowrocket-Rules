@@ -52,7 +52,7 @@ char* getData(const char* url) {
     curl_handle = curl_easy_init();
 
     /* specify URL to get */
-    curl_easy_setopt(curl_handle, CURLOPT_URL, "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/direct.txt");
+    curl_easy_setopt(curl_handle, CURLOPT_URL, url);
 
     /* send all data to this function  */
     curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, WriteMemoryCallback);
