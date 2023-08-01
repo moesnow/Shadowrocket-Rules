@@ -1,4 +1,13 @@
-[General]
+import requests
+from datetime import datetime
+
+RULE_FILE_PATH = "rule.conf"
+
+GFW_URL = "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/gfw.txt"
+DIRECT_URL = "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/direct.txt"
+CNCIDR_URL = "https://raw.githubusercontent.com/Loyalsoldier/surge-rules/release/cncidr.txt"
+
+HEADERS = '''[General]
 # > 启用IPV6
 ipv6 = true
 prefer-ipv6 = true
@@ -13,19 +22,59 @@ dns-server = https://doh.pub/dns-query, https://dns.alidns.com/dns-query
 # 当 Surge VIF 处理 DNS 问题时，此选项要求 Surge 返回一个真正的 IP 地址，而不是一个假 IP 地址。
 # DNS 数据包将被转发到上游 DNS 服务器。
 always-real-ip = %INSERT% *.lan, cable.auth.com, *.msftconnecttest.com, *.msftncsi.com, network-test.debian.org, detectportal.firefox.com, resolver1.opendns.com, *.srv.nintendo.net, *.stun.playstation.net, xbox.*.microsoft.com, *.xboxlive.com, stun.*, global.turn.twilio.com, global.stun.twilio.com, localhost.*.qq.com, localhost.*.weixin.qq.com, *.logon.battlenet.com.cn, *.logon.battle.net, *.blzstatic.cn, music.163.com, *.music.163.com, *.126.net, musicapi.taihe.com, music.taihe.com, songsearch.kugou.com, trackercdn.kugou.com, *.kuwo.cn, api-jooxtt.sanook.com, api.joox.com, joox.com, y.qq.com, *.y.qq.com, streamoc.music.tc.qq.com, mobileoc.music.tc.qq.com, isure.stream.qqmusic.qq.com, dl.stream.qqmusic.qq.com, aqqmusic.tc.qq.com, amobile.music.tc.qq.com, *.xiami.com, *.music.migu.cn, music.migu.cn, proxy.golang.org, *.mcdn.bilivideo.cn, *.cmpassport.com, id6.me, open.e.189.cn, mdn.open.wo.cn, opencloud.wostore.cn, auth.wosms.cn, *.jegotrip.com.cn, *.icitymobile.mobi, *.pingan.com.cn, *.cmbchina.com, pool.ntp.org, *.pool.ntp.org, ntp.*.com, time.*.com, ntp?.*.com, time?.*.com, time.*.gov, time.*.edu.cn, *.ntp.org.cn, PDC._msDCS.*.*, DC._msDCS.*.*, GC._msDCS.*.*
-
-[Rule]
-# Example
-
-# DOMAIN-SUFFIX,example.com,Proxy
-# IP-CIDR,1.1.1.1/22,Proxy
-# IP-CIDR,2a0a:f280::/32,Proxy
-# GEOIP,CN,DIRECT
-
-#FINAL,proxy
-
-[URL Rewrite]
+'''
+TAIL = '''[URL Rewrite]
 ^https?://(www.)?(g|google)\.cn https://www.google.com 302
 
 [MITM]
 hostname = *.google.cn,*.googlevideo.com
+'''
+
+
+def generate_content_with_date():
+    current_time = datetime.now()
+    formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    return f"# Generate date: {formatted_time}\n"
+
+
+def process_url_content(url, domain_or_ip, rule):
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        content = response.text.splitlines()
+
+        result = []
+
+        for line in content:
+            if domain_or_ip.lower() == 'domain':
+                if line.startswith('.'):
+                    line = line[1:]
+                line = f'DOMAIN-SUFFIX,{line}'
+            line += f',{rule}'
+            result.append(line)
+
+        return '\n'.join(result) + '\n'
+
+    except requests.exceptions.RequestException as e:
+        print(f"请求URL时发生错误: {e}")
+        return None
+
+
+def main():
+    Content = generate_content_with_date()
+    Content += HEADERS + '\n'
+    Content += "[Rule]\n"
+    Content += process_url_content(GFW_URL, 'domain', 'PROXY')
+    Content += process_url_content(DIRECT_URL, 'domain', 'DIRECT')
+    Content += process_url_content(CNCIDR_URL, 'ip', 'DIRECT')
+    Content += "FINAL,proxy\n"
+    Content += '\n' + TAIL
+
+    with open(RULE_FILE_PATH, 'w') as file:
+        file.write(Content)
+
+    print("内容已成功输出到文件中。")
+
+
+if __name__ == "__main__":
+    main()
