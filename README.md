@@ -12,7 +12,7 @@
 
 ### 在线地址（URL）
 
-> 如果无法访问域名 `raw.githubusercontent.com`，可以使用第二个地址（`cdn.jsdelivr.net`），或第三个地址（`ghproxy.com`）
+> 如果无法访问域名 `raw.githubusercontent.com`，可以使用第二个地址（`cdn.jsdelivr.net`）或第三个地址（`ghproxy.com`）
 
 #### 规则文件:
 
