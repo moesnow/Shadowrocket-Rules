@@ -30,7 +30,7 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install -r Shadowrocket-Rules/requirements.txt
 
       - name: Generate rule.conf file
         run: |
