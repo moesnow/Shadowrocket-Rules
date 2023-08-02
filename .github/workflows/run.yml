@@ -23,14 +23,13 @@ jobs:
       - name: Make directory
         run: mkdir publish
 
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - name: Set up Python && Install dependencies
+        uses: actions/setup-python@v4
         with:
           python-version: '3.x'
-
-      - name: Install dependencies
+          cache: 'pip'
         run: pip install requests
-
+        
       - name: Generate rule.conf file
         run: |
           cd Shadowrocket-Rules
