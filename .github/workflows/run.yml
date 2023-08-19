@@ -17,9 +17,6 @@ jobs:
         run: echo "RELEASE_NAME=Released on $(date +%Y%m%d%H%M)" >> $GITHUB_ENV
         shell: bash
 
-      - name: Clone source code
-        run: git clone https://github.com/moesnow/Shadowrocket-Rules
-
       - name: Make directory
         run: mkdir publish
 
@@ -30,15 +27,14 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r Shadowrocket-Rules/requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Generate rule.conf file
         run: |
-          cd Shadowrocket-Rules
           python3 build.py
 
       - name: Move files to publish directory
-        run: mv Shadowrocket-Rules/rule.conf publish
+        run: mv rule.conf publish
 
       - name: Git push assets to "release" branch
         run: |
